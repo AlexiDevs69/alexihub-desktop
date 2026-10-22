@@ -26,12 +26,14 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK parts
+      - name: Use preinstalled Android SDK and NDK
         run: |
-          sdkmanager "platforms;android-34" "build-tools;34.0.0" "ndk;27.0.12077973"
-          echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "NDK: $ANDROID_NDK_LATEST_HOME"
+          ls $ANDROID_HOME/build-tools
+          echo "NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> $GITHUB_ENV
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
 
       - name: Install npm packages
         run: npm install
@@ -50,7 +52,8 @@ jobs:
 
       - name: Sign APK
         run: |
-          BT=$ANDROID_HOME/build-tools/34.0.0
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+          echo "Build tools: $BT"
           UNSIGNED=$(find src-tauri/gen/android -name "*unsigned*.apk" | head -n 1)
           echo "Found: $UNSIGNED"
           keytool -genkeypair -keystore $RUNNER_TEMP/ks.jks -alias alexihub \
